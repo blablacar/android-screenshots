@@ -1,4 +1,3 @@
-# android-screenshots
 
 Android Plugin and Library to automate taking screenshots on Android
 =====================================================================
