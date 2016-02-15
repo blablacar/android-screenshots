@@ -1,6 +1,5 @@
 
 ### Android Plugin and Library to automate taking screenshots on Android
-=====================================================================
 
 [![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg?style=flat)](https://github.com/blablacar/android-screenshots/blob/master/LICENSE.txt)
 
