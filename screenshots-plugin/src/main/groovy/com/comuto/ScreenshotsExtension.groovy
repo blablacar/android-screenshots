@@ -23,11 +23,7 @@ class ScreenshotsExtension {
     /** Name of the directory in which to put the generated screenshots (path is relative to the app folder)**/
     String screenshotsDir
 
-    String spoonRunnerLibPath
-
-    String configPropertiesFile //this is realy properties config files
-
-    String localPropertiesFolderPath
+    String configPropertiesFile
 
     String appPackageName
 
