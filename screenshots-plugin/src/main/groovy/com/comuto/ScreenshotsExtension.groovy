@@ -37,4 +37,7 @@ class ScreenshotsExtension {
     String translationsDataFolder
 
     String translationsToolFolder
+
+    Map<String, String> jsonFilesMapping
+
 }

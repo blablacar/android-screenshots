@@ -160,16 +160,6 @@ public class ScreenshotsPlugin implements Plugin<Project> {
     private Task createJsonGenerateTask(Project project, String currentLocale, localeFileName) {
         String screenshotProductFlavor = project.screenshots.productFlavor
 
-        Map<String, String> files = new HashMap<>()
-        files.put("placeholder_screenshots_geocode_departure.json", "${currentLocale}_generated_geocode_search_departure.json")
-        files.put("placeholder_screenshots_geocode_arrival.json", "${currentLocale}_generated_geocode_search_arrival.json")
-        files.put("placeholder_screenshots_trips.json", "${currentLocale}_generated_trips.json")
-        files.put("placeholder_screenshots_conversation.json", "${currentLocale}_generated_conversation.json")
-        files.put("placeholder_screenshots_seats.json", "${currentLocale}_generated_seats.json")
-        files.put("placeholder_screenshots_profile.json", "${currentLocale}_generated_profile.json")
-
-        //String firstConfigPath = getFirstPassConfigPath(project, localeFileName)
-
         Task generateJsonTask = project.task("${currentLocale}CreateJson",
                 type: GenerateJsonTask,
                 group: GROUP_SCREENSHOTS,
@@ -178,7 +168,7 @@ public class ScreenshotsPlugin implements Plugin<Project> {
             firstPassConfig "${project.projectDir}/src/${project.screenshots.productFlavor}/assets/$localeFileName", "##", "##", false
             secondPassConfig "${project.projectDir}/${project.screenshots.imagesConfigFilePath}", "", "", false
             productFlavor screenshotProductFlavor
-            jsonFiles files
+            jsonFiles project.screenshots.jsonFilesMapping
         }
         generateJsonTask
     }
