@@ -1,4 +1,6 @@
+
 apply plugin: 'com.android.application'
+apply plugin: com.comuto.ScreenshotsPlugin
 
 android {
     compileSdkVersion 23
@@ -23,4 +25,25 @@ dependencies {
     compile fileTree(dir: 'libs', include: ['*.jar'])
     testCompile 'junit:junit:4.12'
     compile 'com.android.support:appcompat-v7:23.1.1'
+}
+
+
+Map<String, String> mappingFiles = new HashMap<>()
+mappingFiles.put("placeholder_screenshots.json", "generated.json")
+
+screenshots {
+    phone="192.168.58.101:5555"
+    sevenInchDevice=""
+    tenInchDevice=""
+    buildType = "debug"
+    productFlavor = "screenshots"
+    appPackageName = "com.comuto.screenshots"
+    screenshotClass = "com.comuto.screenshots.TakeScreenshot"
+    screenshotsDir = "screenshots"
+    finalOutputDir = "framedScreenshots"
+    configFilePath = "screenshots-config.properties"
+    translationsDataFolder = "config/translations"
+    translationsToolFolder = "config"
+    hasApkSplit = false
+    jsonFilesMapping = mappingFiles
 }
