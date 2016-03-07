@@ -4,6 +4,10 @@ import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import com.mounacheikhna.capture.CaptureRunnerTask
+import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.Delete
+import org.gradle.api.tasks.Exec
+import org.gradle.api.tasks.StopExecutionException
 
 /**
  * Top-level plugin for managing task for running tests that generate screenshots and copying them
@@ -11,9 +15,7 @@ import com.mounacheikhna.capture.CaptureRunnerTask
  **/
 public class ScreenshotsPlugin implements Plugin<Project> {
 
-    private static final String TASK_PREFIX = "screenshots"
     private static final String GROUP_SCREENSHOTS = "screenshots"
-
     public static final String DEFAULT_PRODUCT_FLAVOR = "defaultConfig"
     public static final String DEFAULT_BUILD_TYPE = "debug"
 
@@ -24,122 +26,208 @@ public class ScreenshotsPlugin implements Plugin<Project> {
         sanitizeInput(project)
 
         project.afterEvaluate {
-            def configPropertiesFile = "${project.projectDir}/${project.screenshots.configPropertiesFile}"
-            Properties properties = null
-            String[] localesStr
-            if(new File(configPropertiesFile).exists()) {
-                properties = ParseUtils.parseProperties(configPropertiesFile)
-                String strl = properties.locales
-                localesStr = strl.split(",");
+            File configFile = new File("${project.projectDir}/${project.screenshots.configFilePath}")
+
+            if (!configFile.exists()) {
+              throw new StopExecutionException("ConfigFile doesn't exist")
             }
 
-            def screenshotsDirName = "${project.projectDir}/${project.screenshots.screenshotsDir}"
-            def putInPlayFoldersTask = project.task("screenshots", //PutInPlayStoreFolders
-                    type: ProcessScreenshotsTask,
-                    group: GROUP_SCREENSHOTS,
-                    description: "Copy generated screenshots into play folder each in the right place.") {
-                localesValues localesStr
-                screenshotsOutputDir project.screenshots.screenshotsDir
-                phoneSerialNo project.screenshots.phone
-                sevenInchDeviceSerialNo project.screenshots.sevenInchDevice
-                tenInchDeviceSerialNo project.screenshots.tenInchDevice
-            }
+            Task cleanFoldersTask = createCleanTask(project)
+            Map<String, String> configValues = ParseUtils.valuesFromFile(configFile)
+            Task copyPlayTask = createCopyPlayTask(project, configValues)
+            Task screenshotsTask = createScreenshotsTasks(project, configValues)
 
-            List<Task> localesTasks = createTestsRunTasks(project, screenshotsDirName, properties)
-            String productFlavor = project.screenshots.productFlavor
-            def flavorTaskName = productFlavor.capitalize()
-
-            Task assembleTask = project.tasks.findByName("assemble$flavorTaskName")
-            Task assembleTestTask = project.tasks.findByName("assembleAndroidTest")
-
-            if (localesTasks.isEmpty()) {
-                return
+            Task frameTask = project.tasks.getByName("FrameScreenshots")
+            if(frameTask != null) {
+                createScreenshotsWorkflowTask(project, cleanFoldersTask, screenshotsTask, frameTask, copyPlayTask)
             }
-            //TODO: use dependsOnOrdered instead of this buggy thing here
-            localesTasks.get(0).dependsOn assembleTask
-            localesTasks.get(0).dependsOn assembleTestTask
-            int size = localesTasks.size();
-            for (int i = 1; i < size; i++) {
-                localesTasks.get(i).dependsOn localesTasks.get(i - 1)
+            else {
+                createScreenshotsWorkflowTask(project, cleanFoldersTask, screenshotsTask, copyPlayTask)
             }
-            putInPlayFoldersTask.dependsOn localesTasks.get(size - 1)
         }
     }
 
-    private boolean sanitizeInput(Project project) {
+   Task createCleanTask(Project project) {
+        return project.task("cleanFoldersTask") {
+            new File("${project.projectDir}/${project.screenshots.screenshotsDir}")
+                    .eachFileRecurse {
+                file -> file.delete()
+            }
+            if(new File("${project.projectDir}/${project.screenshots.finalOutputDir}").exists()) {
+                new File("${project.projectDir}/${project.screenshots.finalOutputDir}")
+                .eachFileRecurse {
+                    file -> file.delete()
+                }
+            }
+        }
+    }
+
+    private void createScreenshotsWorkflowTask(Project project, Task... tasks) {
+        Task screenshotsWorkflowTask = project.task("ScreenshotsWorkflow",
+                group: GROUP_SCREENSHOTS,
+                description: "Run the complete screenshot pipeline.")
+        dependsOnOrdered(screenshotsWorkflowTask, tasks)
+    }
+
+    private Task createScreenshotsTasks(Project project, Map<String, String> configValues) {
+        String screenshotsDirName = "${project.projectDir}/${project.screenshots.screenshotsDir}"
+
+        Task takeAllScreenshots = project.task("Screenshots",
+                group: GROUP_SCREENSHOTS,
+                description: "Takes screenshots generated by spoon on all the connected devices.")
+
+        List<Task> localesTasks = createTestsRunTasks(project, screenshotsDirName, configValues)
+        String productFlavor = project.screenshots.productFlavor
+        def flavorTaskName = productFlavor.capitalize()
+
+        Task assembleTask = project.tasks.findByName("assemble$flavorTaskName")
+        Task assembleTestTask = project.tasks.findByName("assembleAndroidTest")
+
+        if (localesTasks.isEmpty()) {
+            return
+        }
+        localesTasks.get(0).dependsOn assembleTask
+        localesTasks.get(0).dependsOn assembleTestTask
+        int size = localesTasks.size();
+        for (int i = 1; i < size; i++) {
+            localesTasks.get(i).dependsOn localesTasks.get(i - 1)
+        }
+        takeAllScreenshots.dependsOn localesTasks.get(size - 1)
+        return takeAllScreenshots
+    }
+
+    private Task createCopyPlayTask(Project project, Map<String, String> configValues) {
+        String[] localesStr
+        if (configValues.containsKey("locales") && configValues.get("locales") != null) {
+            String strl = configValues.get("locales")
+            localesStr = strl.split(",");
+        }
+        return project.task("CopyToPlayFolders",
+                type: ProcessScreenshotsTask,
+                group: GROUP_SCREENSHOTS,
+                description: "Copy generated screenshots into play folder each in the right place.") {
+            localesValues localesStr
+            screenshotsOutputDir project.screenshots.finalOutputDir
+            phoneSerialNo project.screenshots.phone
+            sevenInchDeviceSerialNo project.screenshots.sevenInchDevice
+            tenInchDeviceSerialNo project.screenshots.tenInchDevice
+        }
+    }
+
+    private static void dependsOnOrdered(Task task, Task... others) {
+        task.dependsOn(others)
+        for (int i = 0; i < others.size() - 1; i++) {
+            if(others[i] != null) {
+                others[i + 1].mustRunAfter(others[i])
+            }
+        }
+    }
+
+    private void sanitizeInput(Project project) {
         //first lets check that at least one serial nb is provided
-        if([project.screenshots.phone, project.screenshots.sevenInchDevice, project.screenshots.tenInchDevice]
-               .every { it?.trim() == false }) {
+        if ([project.screenshots.phone, project.screenshots.sevenInchDevice, project.screenshots.tenInchDevice]
+                .every { it?.trim() == false }) {
             throw new IllegalArgumentException("You must provide a serial number of a phone or seven " +
                     "inch or tablet device. Use adb devices command to find the serial number for the connected device.")
         }
         project.screenshots.productFlavor = project.screenshots.productFlavor ?: DEFAULT_PRODUCT_FLAVOR
         project.screenshots.buildType = project.screenshots.buildType ?: DEFAULT_BUILD_TYPE
-        return true
     }
 
-    private List<Task> createTestsRunTasks(Project project, String screenshotOutputDirName, Properties properties) {
-        String screenshotProductFlavor = project.screenshots.productFlavor
+    private List<Task> createTestsRunTasks(Project project, String screenshotOutputDirName, Map<String, String> values) {
+        String apkPath = getApkPath(project)
+        String testAppPath = getTestApkPath(project)
+        String testPackage = getTestPackage(project)
 
-        String apkPath
-        if(project.screenshots.hasApkSplit) {
-            apkPath = "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-universal-${project.screenshots.buildType}-unaligned.apk"
+        String localesStr = values.get("locales")
+        if(localesStr == null) {
+            throw new StopExecutionException("Illegal Argument locales.")
         }
-        else {
-            apkPath = "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-unaligned.apk"
-        }
-        String testAppPath = "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-androidTest-unaligned.apk"
-
-        String localesStr = properties.locales
-        println properties
         def locales = localesStr.split(",")
         List<Task> localesTasks = new ArrayList<>()
         locales.each {
             String currentLocale = it
-            def localeFileName = properties."$currentLocale"
-
-            def instrumArgs = [:]
-            instrumArgs.put("locale", currentLocale)
-            properties.findAll { k, v -> k.contains(currentLocale) }
-                    .each {
-                key, val ->
-                    instrumArgs.put(key, val)
-            }
-            println "instrumArgs : $instrumArgs "
-
-            def buildType = project.screenshots.buildType
-            def suffix = project.android.buildTypes."$buildType".getVersionNameSuffix()
-            def testPackage
-            if(suffix?.trim()) {
-                suffix = suffix.replace("-", "")
-                testPackage = "${project.screenshots.appPackageName}" + "." + "${suffix}" + ".test"
-            }
-            else {
-                testPackage = "${project.screenshots.appPackageName}" + ".test"
-            }
-
-            Task task = project.tasks.create("${currentLocale}testRunTask", CaptureRunnerTask) {
-                appApkPath apkPath
-                testApkPath testAppPath
-                testPackageName testPackage
-                serialNumber project.screenshots.phone
-                outputPath "$screenshotOutputDirName"
-                instrumentationArgs instrumArgs
-                testClassName project.screenshots.screenshotClass
-                taskPrefix "${currentLocale}"
-            }
-
-            Task generateJsonTask = project.tasks.create("${currentLocale}GenerateJson", GenerateJsonForLocaleTask) {
-                locale(currentLocale)
-                propertiesPath("${project.projectDir}/src/$screenshotProductFlavor/assets/$localeFileName")
-                imagesPropertiesFilePath("${project.projectDir}/src/$screenshotProductFlavor/assets/images.properties")
-                productFlavor(screenshotProductFlavor)
-            }
-            task.dependsOn generateJsonTask
-            localesTasks.add(task)
+            def localeFileName = values.get(currentLocale) // may not work -> values.get("$currentLocale")
+            Task testRunTask = createTestRunTask(project, currentLocale, values, apkPath, testAppPath, testPackage, screenshotOutputDirName)
+            Task generateJsonTask = createJsonGenerateTask(project, currentLocale, localeFileName)
+            testRunTask.dependsOn generateJsonTask
+            testRunTask.mustRunAfter generateJsonTask
+            localesTasks.add(testRunTask)
         }
         localesTasks
     }
 
-}
+    private Task createJsonGenerateTask(Project project, String currentLocale, localeFileName) {
+        String screenshotProductFlavor = project.screenshots.productFlavor
 
+        Map<String, String> files = new HashMap<>()
+        files.put("placeholder_screenshots_geocode_departure.json", "${currentLocale}_generated_geocode_search_departure.json")
+        files.put("placeholder_screenshots_geocode_arrival.json", "${currentLocale}_generated_geocode_search_arrival.json")
+        files.put("placeholder_screenshots_trips.json", "${currentLocale}_generated_trips.json")
+        files.put("placeholder_screenshots_conversation.json", "${currentLocale}_generated_conversation.json")
+        files.put("placeholder_screenshots_seats.json", "${currentLocale}_generated_seats.json")
+        files.put("placeholder_screenshots_profile.json", "${currentLocale}_generated_profile.json")
+
+        //String firstConfigPath = getFirstPassConfigPath(project, localeFileName)
+
+        Task generateJsonTask = project.task("${currentLocale}CreateJson",
+                type: GenerateJsonTask,
+                group: GROUP_SCREENSHOTS,
+                description: "Generates Json files from the templates and replaces the placeholders with the provided values.") {
+            locale currentLocale
+            firstPassConfig "${project.projectDir}/src/${project.screenshots.productFlavor}/assets/$localeFileName", "##", "##", false
+            secondPassConfig "${project.projectDir}/${project.screenshots.imagesConfigFilePath}", "", "", false
+            productFlavor screenshotProductFlavor
+            jsonFiles files
+        }
+        generateJsonTask
+    }
+
+    private Task createTestRunTask(Project project, String currentLocale, Map<String, String> values, String apkPath,
+                                                String testAppPath, String testPackage, String screenshotOutputDirName) {
+        def args = [:]
+        args.put("locale", currentLocale)
+        values.findAll { k, v -> k.contains(currentLocale) }
+                .each {
+            key, val ->
+                args.put(key, val)
+        }
+
+        return project.task("${currentLocale}TestRunTask", type: CaptureRunnerTask) {
+            appApkPath apkPath
+            testApkPath testAppPath
+            testPackageName testPackage
+            serialNumber project.screenshots.phone
+            outputPath "$screenshotOutputDirName"
+            instrumentationArgs args
+            testClassName project.screenshots.screenshotClass
+            taskPrefix "${currentLocale}"
+        }
+    }
+
+    private String getTestPackage(Project project) {
+        def buildType = project.screenshots.buildType
+        def suffix = project.android.buildTypes."$buildType".getVersionNameSuffix()
+        if (suffix?.trim()) {
+            suffix = suffix.replace("-", "")
+            return "${project.screenshots.appPackageName}" + "." + "${suffix}" + ".test"
+        } else {
+            return "${project.screenshots.appPackageName}" + ".test"
+        }
+    }
+
+    private String getTestApkPath(Project project) {
+        String screenshotProductFlavor = project.screenshots.productFlavor
+        return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-androidTest-unaligned.apk"
+    }
+
+    private String getApkPath(Project project) {
+        String screenshotProductFlavor = project.screenshots.productFlavor
+        if (project.screenshots.hasApkSplit) {
+            return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-universal-${project.screenshots.buildType}-unaligned.apk"
+        } else {
+            return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-unaligned.apk"
+        }
+    }
+
+}

@@ -3,6 +3,7 @@ package com.comuto
 import groovy.io.FileType
 import org.apache.commons.lang3.StringUtils
 import org.gradle.api.DefaultTask
+import org.gradle.api.Nullable
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.StopExecutionException
 import org.gradle.api.tasks.TaskAction
@@ -35,81 +36,11 @@ public class ProcessScreenshotsTask extends DefaultTask implements ProcessScreen
         if (!project.plugins.hasPlugin('android')) {
             throw new StopExecutionException("The 'android' plugin is required.")
         }
-        putScreenshotsImagesInPlayFolders()
+        File screenshotsDir = getScreenshotsOutputDir()
+        copyToPlayFolders(screenshotsDir, localesValues)
     }
 
-    private void putScreenshotsImagesInPlayFolders() {
-        File screenshotsOutputFileFolder
-        /*if (screenshotsOutputDir == null) {
-            screenshotsOutputFileFolder = new File("${project.projectDir}/spoon-output/image/")
-        } else { */
-        screenshotsOutputFileFolder = new File("${project.projectDir}/$screenshotsOutputDir")
-        //}
-        //ok pb is here that screenshotsOutputFileFolder doesn't contain folder with devices serialNbs
-
-        def localArray = localesValues;
-        screenshotsOutputFileFolder.eachFileRecurse(FileType.DIRECTORIES) {
-            dir ->
-                DeviceDetails device = findDeviceForDirectory(dir)
-                //TODO: fix the pb here where device is found but it isn't working
-                if (device != null) {
-                    dir.eachFileRecurse(FileType.FILES) {
-                        def foundlocalIndex = StringUtils.indexOfAny(it.name, localArray);
-                        if (it.name.contains(".png") && foundlocalIndex != -1) {
-                            def locale = it.name.substring(foundlocalIndex, foundlocalIndex + 5)
-                            def localeFolder = getPlayLocalFolderName(locale)
-                            copyImageToPlayFolder(it, playImagesDir(device, localeFolder), locale)
-                        }
-                    }
-                }
-        }
-    }
-
-    /**
-     * To get play locale folder name from a locale that has the format fr_FR
-     * Examples : fr_FR -> fr-FR
-     *            ro_RU -> ro ..
-     */
-    static String getPlayLocalFolderName(String locale) {
-        locale.replace("_", "-")
-    }
-
-    DeviceDetails findDeviceForDirectory(File dir) {
-        def patternDeviceNbPart = ~/\d+_/
-        def deviceSerialNumber = dir.name.findAll(patternDeviceNbPart).join(".").replace("_", "")
-        if (deviceSerialNumber == null || deviceSerialNumber.empty) {
-            deviceSerialNumber = dir.name
-        }
-        this.devicesDetails.find({ it.serialNo.contains(deviceSerialNumber) })
-    }
-
-    void copyImageToPlayFolder(File file, playImagesDir, locale) {
-        def name = "copy${file.name}"
-        if (project.tasks.findByName(name)) {
-            println " task duplicated : $name "
-            return
-        }
-        project.tasks.create(name, Copy) {
-            from file.path
-            into playImagesDir
-            rename "(.*)_($locale)_(.*).png", '$3.png'
-        }.execute()
-    }
-
-
-    String playImagesDir(DeviceDetails deviceDetails, String localeFolder) {
-        def playImagesDir = "${project.getProjectDir()}/$PLAY_FOLDER_RELATIVE_PATH/$localeFolder/listing/"
-        if (deviceDetails.type == PHONE) {
-            playImagesDir += "phoneScreenshots"
-        } else if (deviceDetails.type == SEVEN_INCH_DEVICE) {
-            playImagesDir += "sevenInchScreenshots"
-        } else if (deviceDetails.type == TEN_INCH_DEVICE) {
-            playImagesDir += "tenInchScreenshots"
-        }
-        playImagesDir
-    }
-
-    private void initDevicesDetails() {
+    void initDevicesDetails() {
         devicesDetails = new ArrayList<>(3)
         if (phoneSerialNo != null && !phoneSerialNo.empty) {
             devicesDetails.add(new DeviceDetails(PHONE, phoneSerialNo))
@@ -122,6 +53,60 @@ public class ProcessScreenshotsTask extends DefaultTask implements ProcessScreen
         if (tenInchDeviceSerialNo != null && !tenInchDeviceSerialNo.empty) {
             this.devicesDetails.add(new DeviceDetails(TEN_INCH_DEVICE, tenInchDeviceSerialNo))
         }
+    }
+
+    File getScreenshotsOutputDir() {
+        return new File("${project.projectDir}/$screenshotsOutputDir")
+    }
+
+    void copyToPlayFolders(File screenshotsDir, String[] locales) {
+        DeviceDetails defaultDevice = new DeviceDetails(PHONE, phoneSerialNo)
+        screenshotsDir.eachFileRecurse(FileType.FILES) {
+            def foundlocalIndex = StringUtils.indexOfAny(it.name, locales);
+            if (it.name.contains(".png") && foundlocalIndex != -1) {
+                def locale = it.name.substring(foundlocalIndex, foundlocalIndex + 5)
+                def localeFolder = playFolderNameByLocale(locale)
+                copyImageToPlayFolder(it, new File(playImagesDir(defaultDevice, localeFolder)), locale)
+            }
+        }
+    }
+
+    DeviceDetails findDeviceForDirectory(File dir) {
+        def patternDeviceNbPart = ~/\d+_/
+        def deviceSerialNumber = dir.name.findAll(patternDeviceNbPart).join(".").replace("_", "")
+        if (deviceSerialNumber == null || deviceSerialNumber.empty) {
+            deviceSerialNumber = dir.name
+        }
+        this.devicesDetails.find({ it.serialNo.contains(deviceSerialNumber) })
+    }
+
+    void copyImageToPlayFolder(File file, File playImagesDir, String locale) {
+        def name = "copy${file.name}"
+        if (project.tasks.findByName(name)) {
+            return
+        }
+        project.tasks.create(name, Copy) {
+            from file.path
+            into playImagesDir
+            rename "(.*)_($locale)_(.*).png", '$3.png'
+        }.execute()
+    }
+
+    String playFolderNameByLocale(String locale) {
+        locale.replace("_", "-")
+    }
+
+    String playImagesDir(@Nullable DeviceDetails deviceDetails, String localeFolder) {
+        String playImagesDir = "${project.getProjectDir()}/$PLAY_FOLDER_RELATIVE_PATH/$localeFolder/listing/"
+
+        if (deviceDetails == null || deviceDetails.type == PHONE) {
+            playImagesDir += "phoneScreenshots"
+        } else if (deviceDetails.type == SEVEN_INCH_DEVICE) {
+            playImagesDir += "sevenInchScreenshots"
+        } else if (deviceDetails.type == TEN_INCH_DEVICE) {
+            playImagesDir += "tenInchScreenshots"
+        }
+        playImagesDir
     }
 
     @Override

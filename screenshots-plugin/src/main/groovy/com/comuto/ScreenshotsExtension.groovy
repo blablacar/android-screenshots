@@ -1,4 +1,5 @@
 package com.comuto
+
 /**
  * Extension for the parameters used by the plugin.
  */
@@ -23,9 +24,17 @@ class ScreenshotsExtension {
     /** Name of the directory in which to put the generated screenshots (path is relative to the app folder)**/
     String screenshotsDir
 
-    String configPropertiesFile
+    String finalOutputDir
+
+    String configFilePath
+
+    String imagesConfigFilePath
 
     String appPackageName
 
     boolean hasApkSplit
+
+    String translationsDataFolder
+
+    String translationsToolFolder
 }
