@@ -1,2 +1,3 @@
-
-include ':app', ':screenshotsmock' //, 'screenshots-plugin'
+include 'screenshots-plugin'
+include ':app'
+//include ':screenshotsmock'

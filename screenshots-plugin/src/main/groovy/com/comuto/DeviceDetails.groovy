@@ -1,8 +1,7 @@
 package com.comuto
 
 /**
- * Holds data about device on which we take screenshots.
- */
+ * Holds data about device on which we take screenshots.*/
 public class DeviceDetails {
 
     String type
@@ -12,5 +11,4 @@ public class DeviceDetails {
         this.type = type
         this.serialNo = serialNo
     }
-
 }

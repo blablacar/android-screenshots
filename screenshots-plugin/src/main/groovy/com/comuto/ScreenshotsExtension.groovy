@@ -1,8 +1,7 @@
 package com.comuto
 
 /**
- * Extension for the parameters used by the plugin.
- */
+ * Extension for the parameters used by the plugin.*/
 class ScreenshotsExtension {
 
     /** Serial number of a phone device. **/
@@ -34,10 +33,12 @@ class ScreenshotsExtension {
 
     boolean hasApkSplit
 
-    String translationsDataFolder
+    String configFolder
 
-    String translationsToolFolder
+    String translationsFolder
 
-    Map<String, String> jsonFilesMapping
+    String customJsonValuesFolder
+
+    String[] dataPlaceholdersFiles
 
 }

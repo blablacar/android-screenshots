@@ -42,8 +42,8 @@ screenshots {
     screenshotsDir = "screenshots"
     finalOutputDir = "framedScreenshots"
     configFilePath = "screenshots-config.properties"
-    translationsDataFolder = "config/translations"
-    translationsToolFolder = "config"
+    translationsFolder = "config/translations"
+    configFolder = "config"
     hasApkSplit = false
-    jsonFilesMapping = mappingFiles
+    dataPlaceholdersFiles = ["placeholder_screenshots.json"]
 }

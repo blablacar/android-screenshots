@@ -5,9 +5,9 @@ import org.gradle.api.Project
 import org.gradle.api.Task
 import com.mounacheikhna.capture.CaptureRunnerTask
 import org.gradle.api.tasks.Copy
-import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.StopExecutionException
+import com.mounacheikhna.jsongenerator.GenerateJsonTask
 
 /**
  * Top-level plugin for managing task for running tests that generate screenshots and copying them
@@ -29,40 +29,60 @@ public class ScreenshotsPlugin implements Plugin<Project> {
             File configFile = new File("${project.projectDir}/${project.screenshots.configFilePath}")
 
             if (!configFile.exists()) {
-              throw new StopExecutionException("ConfigFile doesn't exist")
+                throw new StopExecutionException("ConfigFile doesn't exist")
             }
 
-            Task cleanFoldersTask = createCleanTask(project)
-            Map<String, String> configValues = ParseUtils.valuesFromFile(configFile)
+            //Task cleanFoldersTask = createCleanTask(project)
+            Map<String, String> configValues = Utils.valuesFromFile(configFile)
+            Task downloadTranslationsTask = createDownloadTranslationsTask(project)
             Task copyPlayTask = createCopyPlayTask(project, configValues)
             Task screenshotsTask = createScreenshotsTasks(project, configValues)
 
             Task frameTask = project.tasks.getByName("FrameScreenshots")
-            if(frameTask != null) {
-                createScreenshotsWorkflowTask(project, cleanFoldersTask, screenshotsTask, frameTask, copyPlayTask)
-            }
-            else {
-                createScreenshotsWorkflowTask(project, cleanFoldersTask, screenshotsTask, copyPlayTask)
+            if (frameTask != null) {
+                createScreenshotsWorkflowTask(project, /*cleanFoldersTask,*/ downloadTranslationsTask,
+                        screenshotsTask, frameTask, copyPlayTask)
+            } else {
+                createScreenshotsWorkflowTask(project, /*cleanFoldersTask,*/ downloadTranslationsTask,
+                        screenshotsTask, copyPlayTask)
             }
         }
     }
 
-   Task createCleanTask(Project project) {
+    static Task createCleanTask(Project project) {
         return project.task("cleanFoldersTask") {
-            new File("${project.projectDir}/${project.screenshots.screenshotsDir}")
-                    .eachFileRecurse {
-                file -> file.delete()
+            final File screenshotsDir = new File(
+                    "${project.projectDir}/${project.screenshots.screenshotsDir}")
+            if (screenshotsDir.exists()) {
+                screenshotsDir.eachFileRecurse { it.delete() }
             }
-            if(new File("${project.projectDir}/${project.screenshots.finalOutputDir}").exists()) {
-                new File("${project.projectDir}/${project.screenshots.finalOutputDir}")
-                .eachFileRecurse {
-                    file -> file.delete()
-                }
+            File finalOutputDir = new File("${project.projectDir}/${project.screenshots.finalOutputDir}")
+            if (finalOutputDir.exists()) {
+                finalOutputDir.eachFileRecurse { it.delete() }
             }
         }
     }
 
-    private void createScreenshotsWorkflowTask(Project project, Task... tasks) {
+    Task createDownloadTranslationsTask(Project project) {
+        def transyncDirName = "${project.projectDir}/${project.screenshots.configFolder}"
+        File transyncWorkingDir = new File(transyncDirName)
+        def args = [/*"sh", "screenshots-transync.sh", ";", */ "transync", "pull", "--locale=all"]
+        Task downloadTask = project.task("DownloadTranslations", type: Exec) {
+            workingDir transyncWorkingDir
+            commandLine args
+        }
+
+        Task copyTask = project.task("copyTranslations", type: Copy) {
+            from "${transyncWorkingDir.path}" //TODO: don't hard code translations folder
+            into "${project.projectDir}/src/${project.screenshots.productFlavor}/assets"
+        }
+
+        Task transyncTask = project.task("PullTranslations", group: GROUP_SCREENSHOTS)
+        dependsOnOrdered(transyncTask, downloadTask, copyTask)
+        return transyncTask
+    }
+
+    private static void createScreenshotsWorkflowTask(Project project, Task... tasks) {
         Task screenshotsWorkflowTask = project.task("ScreenshotsWorkflow",
                 group: GROUP_SCREENSHOTS,
                 description: "Run the complete screenshot pipeline.")
@@ -117,13 +137,13 @@ public class ScreenshotsPlugin implements Plugin<Project> {
     private static void dependsOnOrdered(Task task, Task... others) {
         task.dependsOn(others)
         for (int i = 0; i < others.size() - 1; i++) {
-            if(others[i] != null) {
+            if (others[i] != null) {
                 others[i + 1].mustRunAfter(others[i])
             }
         }
     }
 
-    private void sanitizeInput(Project project) {
+    private static void sanitizeInput(Project project) {
         //first lets check that at least one serial nb is provided
         if ([project.screenshots.phone, project.screenshots.sevenInchDevice, project.screenshots.tenInchDevice]
                 .every { it?.trim() == false }) {
@@ -134,21 +154,24 @@ public class ScreenshotsPlugin implements Plugin<Project> {
         project.screenshots.buildType = project.screenshots.buildType ?: DEFAULT_BUILD_TYPE
     }
 
-    private List<Task> createTestsRunTasks(Project project, String screenshotOutputDirName, Map<String, String> values) {
+    private List<Task> createTestsRunTasks(Project project, String screenshotOutputDirName,
+                                           Map<String, String> values) {
         String apkPath = getApkPath(project)
         String testAppPath = getTestApkPath(project)
         String testPackage = getTestPackage(project)
 
         String localesStr = values.get("locales")
-        if(localesStr == null) {
+        if (localesStr == null) {
             throw new StopExecutionException("Illegal Argument locales.")
         }
         def locales = localesStr.split(",")
         List<Task> localesTasks = new ArrayList<>()
         locales.each {
             String currentLocale = it
-            def localeFileName = values.get(currentLocale) // may not work -> values.get("$currentLocale")
-            Task testRunTask = createTestRunTask(project, currentLocale, values, apkPath, testAppPath, testPackage, screenshotOutputDirName)
+            def localeFileName = values.get(currentLocale)
+            println "***  localeFileName : $localeFileName "
+            Task testRunTask = createTestRunTask(project, currentLocale, values, apkPath, testAppPath,
+                    testPackage, screenshotOutputDirName)
             Task generateJsonTask = createJsonGenerateTask(project, currentLocale, localeFileName)
             testRunTask.dependsOn generateJsonTask
             testRunTask.mustRunAfter generateJsonTask
@@ -160,27 +183,37 @@ public class ScreenshotsPlugin implements Plugin<Project> {
     private Task createJsonGenerateTask(Project project, String currentLocale, localeFileName) {
         String screenshotProductFlavor = project.screenshots.productFlavor
 
+        //TODO: maybe better just to have a folder with these placeholders that we can take from
+        Map<String, String> files = new HashMap<>()
+        project.screenshots.dataPlaceholdersFiles.each {
+            files.put(it, "${currentLocale}_${it.replace("placeholder", "generated")}".toLowerCase())
+        }
+
+        println " generate json with translations in ${project.projectDir}/${project.screenshots.translationsFolder} " +
+                " and custom in ${project.projectDir}/${project.screenshots.customJsonValuesFolder} "
         Task generateJsonTask = project.task("${currentLocale}CreateJson",
                 type: GenerateJsonTask,
                 group: GROUP_SCREENSHOTS,
                 description: "Generates Json files from the templates and replaces the placeholders with the provided values.") {
             locale currentLocale
-            firstPassConfig "${project.projectDir}/src/${project.screenshots.productFlavor}/assets/$localeFileName", "##", "##", false
-            secondPassConfig "${project.projectDir}/${project.screenshots.imagesConfigFilePath}", "", "", false
+            addFirstPassConfig "${project.projectDir}/${project.screenshots.translationsFolder}/$localeFileName",
+                    "##", "##", false
+
+            addFirstPassConfig "${project.projectDir}/${project.screenshots.customJsonValuesFolder}/$localeFileName",
+                    "##", "##", false
             productFlavor screenshotProductFlavor
-            jsonFiles project.screenshots.jsonFilesMapping
+            outputFileNamesMappings files
         }
         generateJsonTask
     }
 
-    private Task createTestRunTask(Project project, String currentLocale, Map<String, String> values, String apkPath,
-                                                String testAppPath, String testPackage, String screenshotOutputDirName) {
+    private Task createTestRunTask(Project project, String currentLocale, Map<String, String> values,
+                                   String apkPath,
+                                   String testAppPath, String testPackage, String screenshotOutputDirName) {
         def args = [:]
         args.put("locale", currentLocale)
         values.findAll { k, v -> k.contains(currentLocale) }
-                .each {
-            key, val ->
-                args.put(key, val)
+                .each { key, val -> args.put(key, val)
         }
 
         return project.task("${currentLocale}TestRunTask", type: CaptureRunnerTask) {
@@ -195,7 +228,7 @@ public class ScreenshotsPlugin implements Plugin<Project> {
         }
     }
 
-    private String getTestPackage(Project project) {
+    private static String getTestPackage(Project project) {
         def buildType = project.screenshots.buildType
         def suffix = project.android.buildTypes."$buildType".getVersionNameSuffix()
         if (suffix?.trim()) {
@@ -206,12 +239,12 @@ public class ScreenshotsPlugin implements Plugin<Project> {
         }
     }
 
-    private String getTestApkPath(Project project) {
+    private static String getTestApkPath(Project project) {
         String screenshotProductFlavor = project.screenshots.productFlavor
         return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-androidTest-unaligned.apk"
     }
 
-    private String getApkPath(Project project) {
+    private static String getApkPath(Project project) {
         String screenshotProductFlavor = project.screenshots.productFlavor
         if (project.screenshots.hasApkSplit) {
             return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-universal-${project.screenshots.buildType}-unaligned.apk"
@@ -219,5 +252,4 @@ public class ScreenshotsPlugin implements Plugin<Project> {
             return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-unaligned.apk"
         }
     }
-
 }

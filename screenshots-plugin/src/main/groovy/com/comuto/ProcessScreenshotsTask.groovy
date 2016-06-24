@@ -14,8 +14,7 @@ import org.gradle.api.tasks.TaskAction
  * {@link ScreenshotsExtension#productFlavor}.
  *
  * To debug this, you can use the following command and attach a remote debugger to port 5005
- * ./gradlew clean build --no-daemon -Dorg.gradle.debug=true
- */
+ * ./gradlew clean build --no-daemon -Dorg.gradle.debug=true*/
 public class ProcessScreenshotsTask extends DefaultTask implements ProcessScreenshotsSpec {
 
     static final String PLAY_FOLDER_RELATIVE_PATH = "src/main/play"
@@ -98,7 +97,6 @@ public class ProcessScreenshotsTask extends DefaultTask implements ProcessScreen
 
     String playImagesDir(@Nullable DeviceDetails deviceDetails, String localeFolder) {
         String playImagesDir = "${project.getProjectDir()}/$PLAY_FOLDER_RELATIVE_PATH/$localeFolder/listing/"
-
         if (deviceDetails == null || deviceDetails.type == PHONE) {
             playImagesDir += "phoneScreenshots"
         } else if (deviceDetails.type == SEVEN_INCH_DEVICE) {
@@ -133,5 +131,4 @@ public class ProcessScreenshotsTask extends DefaultTask implements ProcessScreen
     void tenInchDeviceSerialNo(String tenInchDeviceSerialNo) {
         this.tenInchDeviceSerialNo = tenInchDeviceSerialNo
     }
-
 }
