@@ -4,41 +4,42 @@ package com.comuto
  * Extension for the parameters used by the plugin.*/
 class ScreenshotsExtension {
 
-    /** Serial number of a phone device. **/
-    String phone
-    /** Serial number of a seven inch device. **/
-    String sevenInchDevice
-    /** Serial number of a ten inch device. **/
-    String tenInchDevice
+  /** Serial number of a phone device. **/
+  String phone
+  /** Serial number of a seven inch device. **/
+  String sevenInchDevice
+  /** Serial number of a ten inch device. **/
+  String tenInchDevice
 
-    /** The {@link com.android.builder.model.ProductFlavor} for which we take screenshots. **/
-    String productFlavor
+  /** The {@link com.android.builder.model.ProductFlavor} for which we take screenshots. **/
+  String productFlavor
 
-    /** The {@link com.android.builder.model.BuildType} in the flavor in which we take screenshots.**/
-    String buildType
+  /** The {@link com.android.builder.model.BuildType} in the flavor in which we take screenshots.**/
+  String buildType
 
-    /** Class name of the test class that uses spoon to take screenshots.**/
-    String screenshotClass
+  /** Class name of the test class that uses spoon to take screenshots.**/
+  String screenshotClass
 
-    /** Name of the directory in which to put the generated screenshots (path is relative to the app folder)**/
-    String screenshotsDir
+  /** Name of the directory in which to put the generated screenshots (path is relative to the app folder)**/
+  String screenshotsDir
 
-    String finalOutputDir
+  String finalOutputDir
 
-    String configFilePath
+  String configFilePath
 
-    String imagesConfigFilePath
+  String appPackageName
 
-    String appPackageName
+  boolean hasApkSplit
 
-    boolean hasApkSplit
+  String configFolder
 
-    String configFolder
+  String translationsFolder
 
-    String translationsFolder
+  String customJsonValuesFolder
 
-    String customJsonValuesFolder
+  String[] dataPlaceholdersFiles
 
-    String[] dataPlaceholdersFiles
+  /** by defaykt set to false **/
+  boolean pullTranslations = false
 
 }
