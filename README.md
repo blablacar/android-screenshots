@@ -18,7 +18,7 @@ Usage
           }
         }
         dependencies {
-          classpath "gradle.plugin.com.comuto.screenshots:screenshots-plugin:0.1.1"
+          classpath "gradle.plugin.com.comuto.screenshots:screenshots-plugin:0.1.2"
         }
       }
       
@@ -28,7 +28,7 @@ Usage
       - For Gradle >= 2.1 
       ```gradle
         plugins {
-          id "com.comuto.screenshots" version "0.1.1"
+          id "com.comuto.screenshots" version "0.1.2"
         }
         ```
 

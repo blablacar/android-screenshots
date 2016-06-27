@@ -1,13 +1,13 @@
 package com.comuto
 
 import com.mounacheikhna.capture.CaptureRunnerTask
+import com.mounacheikhna.jsongenerator.GenerateJsonTask
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.Task
 import org.gradle.api.tasks.Copy
 import org.gradle.api.tasks.Exec
 import org.gradle.api.tasks.StopExecutionException
-import com.mounacheikhna.jsongenerator.GenerateJsonTask
 
 /**
  * Top-level plugin for managing task for running tests that generate screenshots and copying them
@@ -29,7 +29,7 @@ public class ScreenshotsPlugin implements Plugin<Project> {
       File configFile = new File("${project.projectDir}/${project.screenshots.configFilePath}")
 
       if (!configFile.exists()) {
-        throw new StopExecutionException("ConfigFile doesn't exist")
+        throw new StopExecutionException("ConfigFile of path ${configFile.getPath()} doesn't exist ")
       }
 
       Task cleanFoldersTask = createCleanTask(project)
