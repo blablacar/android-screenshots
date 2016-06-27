@@ -9,11 +9,28 @@ Usage
 ----
 
   - For the plugin :
-    //TODO:
-
-  - For the library to mock json reponses
-   //TODO:
-
+      - For all gradle versions : 
+      ```gradle
+      buildscript {
+        repositories {
+          maven {
+            url "https://plugins.gradle.org/m2/"
+          }
+        }
+        dependencies {
+          classpath "gradle.plugin.com.comuto.screenshots:screenshots-plugin:0.1.1"
+        }
+      }
+      
+      apply plugin: "com.comuto.screenshots"
+      ```
+      
+      - For Gradle >= 2.1 
+      ```gradle
+        plugins {
+          id "com.comuto.screenshots" version "0.1.1"
+        }
+        ```
 
 Contributing
 ============
