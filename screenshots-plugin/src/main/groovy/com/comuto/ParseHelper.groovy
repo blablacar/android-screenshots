@@ -2,7 +2,7 @@ package com.comuto
 
 import groovy.json.JsonSlurper
 
-public final class ParseHelper {
+final class ParseHelper {
 
   public static Map<String, String> valuesFromFile(File file) {
     if (!file.exists()) {

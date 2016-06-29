@@ -34,7 +34,7 @@ public class ScreenshotsPlugin implements Plugin<Project> {
       }
 
       Task cleanFoldersTask = createCleanTask(project)
-      Map<String, String> configValues = Utils.valuesFromFile(configFile)
+      Map<String, String> configValues = ParseHelper.valuesFromFile(configFile)
       Task downloadTranslationsTask = createDownloadTranslationsTask(project)
       Task copyPlayTask = createCopyPlayTask(project, configValues)
       Task screenshotsTask = createScreenshotsTasks(project, configValues)

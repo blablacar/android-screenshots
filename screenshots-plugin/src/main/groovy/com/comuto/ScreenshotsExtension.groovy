@@ -39,7 +39,7 @@ class ScreenshotsExtension {
 
   String[] dataPlaceholdersFiles
 
-  /** by default set to false **/
+  /** by defaykt set to false **/
   boolean pullTranslations = false
 
 }
