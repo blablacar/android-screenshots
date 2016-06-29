@@ -29,8 +29,18 @@ public class ScreenshotsPlugin implements Plugin<Project> {
       File configFile = new File("${project.projectDir}/${project.screenshots.configFilePath}")
 
       if (!configFile.exists()) {
-        throw new StopExecutionException("ConfigFile of path ${configFile.getPath()} doesn't exist ")
+        throw new StopExecutionException(
+            "ConfigFile of path ${configFile.getPath()} doesn't exist ")
       }
+
+/*
+      Task apksPathsTask = project.task("apksPathsTask") << {
+        String apkPath = getApkPath(project)
+        String testAppPath = getTestApkPath(project)
+        String testPackage = getTestPackage(project)
+        println " apkPath : $apkPath & testAppPath : $testAppPath & testPackage : $testPackage"
+      }
+*/
 
       Task cleanFoldersTask = createCleanTask(project)
       Map<String, String> configValues = Utils.valuesFromFile(configFile)
@@ -73,8 +83,8 @@ public class ScreenshotsPlugin implements Plugin<Project> {
     }
 
     Task copyTask = project.task("copyTranslations", type: Copy) {
-      from "${transyncWorkingDir.path}" //TODO: don't hard code translations folder
-      into "${project.projectDir}/src/${project.screenshots.productFlavor}/assets"
+      from "${project.projectDir}/${project.screenshots.translationsFolder}" //TODO: don't hard code translations folder
+      into "${project.projectDir}/src/${project.screenshots.productFlavor}/assets/"
     }
 
     Task transyncTask = project.task("PullTranslations", group: GROUP_SCREENSHOTS)
@@ -160,6 +170,8 @@ public class ScreenshotsPlugin implements Plugin<Project> {
     String testAppPath = getTestApkPath(project)
     String testPackage = getTestPackage(project)
 
+    println " apkPath: $apkPath & testAppPath: $testAppPath & testPackage : $testPackage"
+
     String localesStr = values.get("locales")
     if (localesStr == null) {
       throw new StopExecutionException("Illegal Argument locales.")
@@ -190,7 +202,7 @@ public class ScreenshotsPlugin implements Plugin<Project> {
     }
 
     println " generate json with translations in ${project.projectDir}/${project.screenshots.translationsFolder} " +
-            " and custom in ${project.projectDir}/${project.screenshots.customJsonValuesFolder} "
+        " and custom in ${project.projectDir}/${project.screenshots.customJsonValuesFolder} "
     Task generateJsonTask = project.task("${currentLocale}CreateJson",
         type: GenerateJsonTask,
         group: GROUP_SCREENSHOTS,
@@ -210,6 +222,8 @@ public class ScreenshotsPlugin implements Plugin<Project> {
   private Task createTestRunTask(Project project, String currentLocale, Map<String, String> values,
       String apkPath,
       String testAppPath, String testPackage, String screenshotOutputDirName) {
+    println "create test run task for local $currentLocale & for values $values & for testAppPath " +
+        "$testAppPath & for testPackage $testPackage & for output dir $screenshotOutputDirName"
     def args = [:]
     args.put("locale", currentLocale)
     values.findAll { k, v -> k.contains(currentLocale) }
@@ -230,10 +244,9 @@ public class ScreenshotsPlugin implements Plugin<Project> {
 
   private static String getTestPackage(Project project) {
     def buildType = project.screenshots.buildType
-    def suffix = project.android.buildTypes."$buildType".getVersionNameSuffix()
-    if (suffix?.trim()) {
-      suffix = suffix.replace("-", "")
-      return "${project.screenshots.appPackageName}" + "." + "${suffix}" + ".test"
+    if (buildType?.trim()) {
+      buildType = buildType.replace("-", "")
+      return "${project.screenshots.appPackageName}" + "." + "${buildType}" + ".test"
     } else {
       return "${project.screenshots.appPackageName}" + ".test"
     }
