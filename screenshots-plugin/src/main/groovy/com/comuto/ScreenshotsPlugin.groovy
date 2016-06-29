@@ -33,15 +33,6 @@ public class ScreenshotsPlugin implements Plugin<Project> {
             "ConfigFile of path ${configFile.getPath()} doesn't exist ")
       }
 
-/*
-      Task apksPathsTask = project.task("apksPathsTask") << {
-        String apkPath = getApkPath(project)
-        String testAppPath = getTestApkPath(project)
-        String testPackage = getTestPackage(project)
-        println " apkPath : $apkPath & testAppPath : $testAppPath & testPackage : $testPackage"
-      }
-*/
-
       Task cleanFoldersTask = createCleanTask(project)
       Map<String, String> configValues = Utils.valuesFromFile(configFile)
       Task downloadTranslationsTask = createDownloadTranslationsTask(project)
