@@ -8,29 +8,46 @@
 Usage
 ----
 
-  - For the plugin :
-      - For all gradle versions : 
-      ```gradle
-      buildscript {
-        repositories {
-          maven {
-            url "https://plugins.gradle.org/m2/"
-          }
-        }
-        dependencies {
-          classpath "gradle.plugin.com.comuto.screenshots:screenshots-plugin:0.1.6"
-        }
+- For the plugin :
+  - For all gradle versions : 
+  ```gradle
+  buildscript {
+    repositories {
+      maven {
+        url "https://plugins.gradle.org/m2/"
       }
-      
-      apply plugin: "com.comuto.screenshots"
-      ```
-      
-      - For Gradle >= 2.1 
-      ```gradle
-        plugins {
-          id "com.comuto.screenshots" version "0.1.6"
-        }
-        ```
+    }
+    dependencies {
+      classpath "gradle.plugin.com.comuto.screenshots:screenshots-plugin:0.1.7"
+    }
+  }
+  
+  apply plugin: "com.comuto.screenshots"
+  ```
+  
+  - For Gradle >= 2.1 
+  ```gradle
+    plugins {
+      id "com.comuto.screenshots" version "0.1.7"
+    }
+    ```
+    
+Configuration
+=============
+
+
+How does it work ? 
+================== 
+This plugin orchestrates the following actions:
+ - Uses [json generator](https://github.com/chemouna/JsonGenerator) to generate and create custom content in json files for okhttp mocks  
+ - Uses Espresso to create tests that navigate to screens from which to capture screenshots 
+    and uses [capture lib](https://github.com/chemouna/capture) to take a screenshot.
+ - run these tests repeatedly for each locale provided in the configuration file and takes 
+    screenshots for each one.
+ - then pulls the images from the device.
+ - then uses [frame screenshots plugin](https://github.com/chemouna/frame-gradle-plugin) to frame the screenshots with the provided titles for 
+    each locale.
+
 
 Contributing
 ============

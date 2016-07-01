@@ -41,10 +41,10 @@ public class ScreenshotsPlugin implements Plugin<Project> {
 
       Task frameTask = project.tasks.getByName("FrameScreenshots")
       if (frameTask != null) {
-        createScreenshotsWorkflowTask(project, cleanFoldersTask, downloadTranslationsTask,
+        createScreenshotsWorkflowTask(project, /*cleanFoldersTask,*/ downloadTranslationsTask,
             screenshotsTask, frameTask, copyPlayTask)
       } else {
-        createScreenshotsWorkflowTask(project, cleanFoldersTask, downloadTranslationsTask,
+        createScreenshotsWorkflowTask(project, /*cleanFoldersTask,*/ downloadTranslationsTask,
             screenshotsTask, copyPlayTask)
       }
     }

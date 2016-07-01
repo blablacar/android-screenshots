@@ -32,7 +32,7 @@ Map<String, String> mappingFiles = new HashMap<>()
 mappingFiles.put("placeholder_screenshots.json", "generated.json")
 
 screenshots {
-    phone="192.168.58.101:5555"
+    phone="192.168.58.101:5555              "
     sevenInchDevice=""
     tenInchDevice=""
     buildType = "debug"
