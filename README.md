@@ -35,7 +35,44 @@ Usage
 Configuration
 =============
 
+Example: 
+```
+screenshots {
+    phone="192.168.58.101:5555              "
+    sevenInchDevice=""
+    tenInchDevice=""
+    buildType = "debug"
+    productFlavor = "screenshots"
+    appPackageName = "com.comuto.screenshots"
+    screenshotClass = "com.comuto.screenshots.TakeScreenshot"
+    screenshotsDir = "screenshots"
+    finalOutputDir = "framedScreenshots"
+    configFilePath = "screenshots-config.properties"
+    configFolder = "config"
+    translationsFolder = "config/translations"
+    //customJsonValuesFolder = "config/custom"
+    hasApkSplit = false
+    dataPlaceholdersFiles = ["placeholder_screenshots.json"]
+}
+```
 
+phone                     id of the phone (run ```adb devices``` to get it) to take screenshots from.
+sevenInchDevice           id of a seven inch device to take screenshots. 
+tenInchDevice             id of a ten inch device to take screenshots.
+buildType:                buildType of the flavor to run.
+productFlavor             flavor to run.
+appPackageName            the application id of the app 
+screenshotClass           Espresso test class name 
+screenshotsDir            directory in which to save the generated screenshots 
+finalOutputDir            final directory in which to save the screenshots after all steps are done (framing, ...)
+configFilePath            file containg locales configuration 
+configFolder              folder that contains the json to be generated configuration and translated strings 
+translationsFolder        folder containing the translations of values to put in json 
+customJsonValuesFolder    custom folder for the json values that are in locale (not fetched remotely)
+hasApkSplit               whether or not the app apks are using apk split 
+dataPlaceholdersFiles     collection of the template of jsons to generate 
+    
+    
 How does it work ? 
 ================== 
 This plugin orchestrates the following actions:
@@ -46,7 +83,7 @@ This plugin orchestrates the following actions:
     screenshots for each one.
  - then pulls the images from the device.
  - then uses [frame screenshots plugin](https://github.com/chemouna/frame-gradle-plugin) to frame the screenshots with the provided titles for 
-    each locale.
+    each locale (if it in the dependencies and is configured). 
 
 
 Contributing

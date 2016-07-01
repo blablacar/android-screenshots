@@ -42,8 +42,47 @@ screenshots {
     screenshotsDir = "screenshots"
     finalOutputDir = "framedScreenshots"
     configFilePath = "screenshots-config.properties"
-    translationsFolder = "config/translations"
     configFolder = "config"
+    translationsFolder = "config/translations"
+    //customJsonValuesFolder = "config/custom"
     hasApkSplit = false
     dataPlaceholdersFiles = ["placeholder_screenshots.json"]
 }
+
+/*
+
+screenshots {
+  phone = "d5246a5f"
+  sevenInchDevice = "" //"192.168.56.101:5555"
+  tenInchDevice = "" //"192.168.56.102:5555"
+  buildType = "debug"
+  productFlavor = "screenshots"
+  appPackageName = "com.comuto"
+  screenshotClass = "com.comuto.v3.TakeScreenshot"
+  screenshotsDir = "delivery/output/screenshots"
+  finalOutputDir = "delivery/output/framedScreenshots"
+  configFilePath = "screenshots-config.properties"
+  configFolder = "delivery/config"
+  translationsFolder = "delivery/config/translations"
+  customJsonValuesFolder = "delivery/config/custom"
+  hasApkSplit = false
+  dataPlaceholdersFiles = ["placeholder_geocode_departure.json", "placeholder_geocode_arrival.json",
+                           "placeholder_trips.json", "placeholder_conversation.json", "placeholder_seats.json",
+                           "placeholder_profile.json", "placeholder_main_messages.json", "placeholder_tripoffers.json"]
+}
+
+frames {
+  inputDir = "delivery/output/screenshots"
+  outputDir = "delivery/output/framedScreenshots"
+  framesDir = "delivery/frames"
+  selectedFrame = "galaxy_nexus_port_back.png"
+  titlesFolder = "delivery/config/translations"
+  suffixKeyword = "_screen"
+  backgroundColor = "#26abe9"
+  textColor = "#FFFFFF"
+  textSize = 28
+  topOffset = 48
+}
+
+
+ */
