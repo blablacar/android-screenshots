@@ -56,7 +56,8 @@ screenshots {
 }
 ```
 
-phone                     id of the phone (run ```adb devices``` to get it) to take screenshots from.
+```
+phone                     id of the phone (run adb devices to get it) to take screenshots from.
 sevenInchDevice           id of a seven inch device to take screenshots. 
 tenInchDevice             id of a ten inch device to take screenshots.
 buildType:                buildType of the flavor to run.
@@ -71,7 +72,7 @@ translationsFolder        folder containing the translations of values to put in
 customJsonValuesFolder    custom folder for the json values that are in locale (not fetched remotely)
 hasApkSplit               whether or not the app apks are using apk split 
 dataPlaceholdersFiles     collection of the template of jsons to generate 
-    
+```    
     
 How does it work ? 
 ================== 
