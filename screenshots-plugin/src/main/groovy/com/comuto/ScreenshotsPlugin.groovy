@@ -105,8 +105,8 @@ public class ScreenshotsPlugin implements Plugin<Project> {
     def flavorTaskName = productFlavor.capitalize()
     println "*** used flavorTaskName "+ flavorTaskName + " ***"
 
-    Task assembleTask = project.tasks.findByName("assemble$flavorTaskName")
-    Task assembleTestTask = project.tasks.findByName("assembleAndroidTest")
+    Task assembleTask = project.tasks.findByName("assemble")
+    /*Task assembleTestTask = project.tasks.findByName("assembleAndroidTest")*/
 
     println "*** assemble task name assemble$flavorTaskName ***"
     if (localesTasks.isEmpty()) {
@@ -115,14 +115,17 @@ public class ScreenshotsPlugin implements Plugin<Project> {
     }
     println "*** first task to use : " + localesTasks.get(0) + "***"
     localesTasks.get(0).dependsOn assembleTask
-    localesTasks.get(0).dependsOn assembleTestTask
+    //localesTasks.get(0).dependsOn assembleTestTask*/
     int size = localesTasks.size();
     println "*** adding dependsOn for all localesTasks of size "+ localesTasks.size()
     for (int i = 1; i < size; i++) {
-      prinltn "*** adding dependsOn for task nb"+ i
+      println "*** adding dependsOn for task nb"+ i
       localesTasks.get(i).dependsOn localesTasks.get(i - 1)
     }
+
+    //assembleTestTask.dependsOn assembleTask
     takeAllScreenshots.dependsOn localesTasks.get(size - 1)
+    //takeAllScreenshots.doFirst assembleTask
     return takeAllScreenshots
   }
 
