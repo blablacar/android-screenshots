@@ -135,6 +135,10 @@ public class ScreenshotsPlugin implements Plugin<Project> {
       String strl = configValues.get("locales")
       localesStr = strl.split(",");
     }
+
+    println " create copy task for locales : "+ localesStr + " from each devices screenshot folder to output : "+
+            project.screenshots.finalOutputDir
+
     return project.task("CopyToPlayFolders",
         type: ProcessScreenshotsTask,
         group: GROUP_SCREENSHOTS,
@@ -234,6 +238,10 @@ public class ScreenshotsPlugin implements Plugin<Project> {
         .each { key, val -> args.put(key, val)
     }
 
+    println "create runner task with data - appApkPath : "+ apkPath + " and testApkPath : "+ testAppPath +
+            " testPackage : "+ testPackage + " serialNumber : "+ project.screenshots.phone + " - testClassName : "+
+            project.screenshots.screenshotClass + " taskPrefix : "+ currentLocale
+
     return project.task("${currentLocale}TestRunTask", type: CaptureRunnerTask) {
       appApkPath apkPath
       testApkPath testAppPath
@@ -258,15 +266,18 @@ public class ScreenshotsPlugin implements Plugin<Project> {
 
   private static String getTestApkPath(Project project) {
     String screenshotProductFlavor = project.screenshots.productFlavor
-    return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-androidTest-unaligned.apk"
+    //return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-androidTest-unaligned.apk"
+    return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-androidTest.apk"
   }
 
   private static String getApkPath(Project project) {
     String screenshotProductFlavor = project.screenshots.productFlavor
     if (project.screenshots.hasApkSplit) {
-      return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-universal-${project.screenshots.buildType}-unaligned.apk"
+      //return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-universal-${project.screenshots.buildType}-unaligned.apk"
+      return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-universal-${project.screenshots.buildType}.apk"
     } else {
-      return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-unaligned.apk"
+      //return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}-unaligned.apk"
+      return "${project.buildDir}/outputs/apk/${project.name}-$screenshotProductFlavor-${project.screenshots.buildType}.apk"
     }
   }
 }
