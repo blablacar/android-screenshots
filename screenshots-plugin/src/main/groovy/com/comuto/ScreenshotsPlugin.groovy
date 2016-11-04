@@ -41,9 +41,11 @@ public class ScreenshotsPlugin implements Plugin<Project> {
 
       Task frameTask = project.tasks.getByName("FrameScreenshots")
       if (frameTask != null) {
+        println "creating screenshots workflow with frametask"
         createScreenshotsWorkflowTask(project, /*cleanFoldersTask,*/ downloadTranslationsTask,
             screenshotsTask, frameTask, copyPlayTask)
       } else {
+        println "creating screenshots workflow without frametask"
         createScreenshotsWorkflowTask(project, /*cleanFoldersTask,*/ downloadTranslationsTask,
             screenshotsTask, copyPlayTask)
       }
@@ -99,18 +101,25 @@ public class ScreenshotsPlugin implements Plugin<Project> {
 
     List<Task> localesTasks = createTestsRunTasks(project, screenshotsDirName, configValues)
     String productFlavor = project.screenshots.productFlavor
+    println "*** used productFlavor "+ productFlavor + " ***"
     def flavorTaskName = productFlavor.capitalize()
+    println "*** used flavorTaskName "+ flavorTaskName + " ***"
 
     Task assembleTask = project.tasks.findByName("assemble$flavorTaskName")
     Task assembleTestTask = project.tasks.findByName("assembleAndroidTest")
 
+    println "*** assemble task name assemble$flavorTaskName ***"
     if (localesTasks.isEmpty()) {
+      println "*** localesTasks is empty -> exit ***"
       return
     }
+    println "*** first task to use : " + localesTasks.get(0) + "***"
     localesTasks.get(0).dependsOn assembleTask
     localesTasks.get(0).dependsOn assembleTestTask
     int size = localesTasks.size();
+    println "*** adding dependsOn for all localesTasks of size "+ localesTasks.size()
     for (int i = 1; i < size; i++) {
+      prinltn "*** adding dependsOn for task nb"+ i
       localesTasks.get(i).dependsOn localesTasks.get(i - 1)
     }
     takeAllScreenshots.dependsOn localesTasks.get(size - 1)
@@ -180,6 +189,7 @@ public class ScreenshotsPlugin implements Plugin<Project> {
       testRunTask.mustRunAfter generateJsonTask
       localesTasks.add(testRunTask)
     }
+    println "*** finished creating tasks and their size : "+ localesTasks.size() + "***"
     localesTasks
   }
 
