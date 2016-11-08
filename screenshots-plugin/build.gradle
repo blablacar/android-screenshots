@@ -27,7 +27,7 @@ dependencies {
     compile localGroovy()
     compile "com.android.tools.build:gradle:2.1.0"
     compile "org.apache.commons:commons-lang3:3.4"
-    compile "com.mounacheikhna.capture:capture-runner:0.1.6" //0.1.8
+    compile "com.mounacheikhna.capture:capture-runner:0.1.9"
     compile "com.mounacheikhna.jsongenerator:jsongenerator:0.5"
 
     testCompile 'junit:junit:4.12'
